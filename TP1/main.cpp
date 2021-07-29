@@ -4,24 +4,35 @@
 
 using namespace std;
 
-struct label{
+struct list{
     string lbl;
     int pos;
-    struct label *prox;
+    struct list *prox;
 };
 
-int label(fstream& my_file, fstream& myfile,string lbl){
+int label(fstream& input_file, fstream& out_file,string lbl){
     int cont = 0;
     string r1 = "";
     if(lbl=="WORD"){
-        my_file >> r1;
-        myfile << r1 <<" ";
+        input_file >> r1;
+        out_file << setfill('0') << setw(3) << r1 <<" ";
         cont+=2;
     }
     return cont;
 }
 
-int instruct(fstream& my_file, fstream& myfile, string ins){
+void labelInsert(list* l, string lbl, int count){
+    while (l->prox!=nullptr){
+        l=l->prox;
+    }
+    l->prox = new list();
+    l = l->prox;
+    l->pos=count;
+    l->lbl=lbl;
+    l->prox=nullptr;
+}
+
+int instruct(fstream& input_file, fstream& out_file, string ins, list* lblUse, int count){
     int cod = -1;
     string r1 = "",r2="";
     if (ins=="HALT") cod=0;
@@ -46,25 +57,26 @@ int instruct(fstream& my_file, fstream& myfile, string ins){
     else if(ins=="CALL") cod=19;
     else if(ins=="RET") cod=20;
     if(cod > -1)
-        myfile << cod <<" ";
+        out_file << setfill('0') << setw(3) << cod <<" ";
     int cont=1;
     if (cod>0 && cod<20){
-        my_file >> r1;
+        input_file >> r1;
         cont++;
     }
     if (cod==1 || cod==2 || cod==5 || (cod >=8 && cod<=14)){
-        my_file >> r2;
+        input_file >> r2;
         cont++;
     }
     if(r1=="R0" || r1=="R1" || r1=="R2" || r1=="R3"){
-        myfile << r1[1] << " ";
+        out_file << setfill('0') << setw(3) << r1[1] << " ";
         if(r2=="R0" || r2=="R1" || r2=="R2" || r2=="R3"){
-            myfile << r2[1] << " ";
+            out_file << setfill('0') << setw(3) << r2[1] << " ";
         }else if(r2!=""){
-            myfile << "y ";
+            labelInsert(lblUse,r2,count+2);
+            out_file << "yyy ";
         }
     }else if(r1!=""){
-        myfile << "x ";
+        out_file << "xxx ";
     }
     if(cod==0 || cod==-1){
         cont--;
@@ -73,32 +85,55 @@ int instruct(fstream& my_file, fstream& myfile, string ins){
 }
 
 int main() {
-	fstream my_file("MV.txt", ios::in);
-    fstream myfile("ex.mv", ios::out);
-    int w=0;
-	if (!my_file||!myfile) {
+	fstream input_file("MV.txt", ios::in);
+    fstream out_file("ex.mv", ios::out);
+    int countInst=0;
+	if (!input_file||!out_file) {
 		cout << "File not found";
 	}
 	else {
 		string word;
-        myfile << "MV-EXE\n\n";
-        myfile << "    www 999 xxx\n\n";
+        list* lblDef = new list();
+        lblDef->lbl="head";
+        lblDef->pos=-1;
+        lblDef->prox=nullptr;
+        list* lblUse = new list();
+        lblUse->lbl="head";
+        lblUse->pos=-1;
+        lblUse->prox=nullptr;
+        out_file << "MV-EXE\n\n";
+        out_file << "    www 999 www\n\n";
 		while (1) {
-			my_file >> word;
+			input_file >> word;
             if(word[word.length()-1]==':'){
-                my_file >> word;
-                w += label(my_file, myfile, word);
+                labelInsert(lblDef,word,countInst);
+                input_file >> word;
+                countInst += label(input_file, out_file, word);
             }else{
-                w += instruct(my_file, myfile, word);
+                countInst += instruct(input_file, out_file, word, lblUse, countInst);
             }
-            if (my_file.eof())
-				break;
+            if (input_file.eof()){
+                out_file << "\n";
+                list* lUseAux = lblUse;
+                while(lUseAux->prox!=nullptr){
+                    lUseAux = lUseAux->prox;
+                    list* lDefAux = lblDef;
+                    while(lDefAux->prox!=nullptr){
+                        lDefAux = lDefAux->prox;
+                        if (lDefAux->lbl.compare(lDefAux->lbl)==0){
+                            out_file.seekp((29 + 4*(lUseAux->pos)));
+                            out_file << setfill('0') << setw(3) << (lDefAux->pos - lUseAux->pos);
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
 		}
 	}
-	my_file.close();
-    myfile << "\n";
-    myfile.seekp(10);
-    myfile << setfill('0') << setw(3) << w;
-    myfile.close();
+	input_file.close();
+    out_file.seekp(10);
+    out_file << setfill('0') << setw(3) << countInst;
+    out_file.close();
 	return 0;
 }
