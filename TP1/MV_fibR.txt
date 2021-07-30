@@ -1,0 +1,22 @@
+READ R0
+LOAD R1 const1
+LOAD R2 const1
+LOAD R3 const2
+
+iteracao: PUSH R2
+COPY R2 R3
+SUB R2 R0
+JZ fim
+POP R2
+PUSH R1
+ADD R1 R2
+POP R2
+ADD R3 const1
+JUMP iteracao
+
+fim: WRITE R1
+HALT
+
+const1: WORD 1
+const2: WORD 2
+END
