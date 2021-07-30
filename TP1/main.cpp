@@ -16,7 +16,9 @@ int label(fstream& input_file, fstream& out_file,string lbl){
     if(lbl=="WORD"){
         input_file >> r1;
         out_file << setfill('0') << setw(3) << r1 <<" ";
-        cont+=2;
+        cont=1;
+    }else{
+
     }
     return cont;
 }
@@ -69,16 +71,17 @@ int instruct(fstream& input_file, fstream& out_file, string ins, list* lblUse, i
     }
     if(r1=="R0" || r1=="R1" || r1=="R2" || r1=="R3"){
         out_file << setfill('0') << setw(3) << r1[1] << " ";
-        if(r2=="R0" || r2=="R1" || r2=="R2" || r2=="R3"){
-            out_file << setfill('0') << setw(3) << r2[1] << " ";
-        }else if(r2!=""){
-            labelInsert(lblUse,r2,count+2);
-            out_file << "yyy ";
-        }
     }else if(r1!=""){
+        labelInsert(lblUse,r1,count+1);
         out_file << "xxx ";
     }
-    if(cod==0 || cod==-1){
+    if(r2=="R0" || r2=="R1" || r2=="R2" || r2=="R3"){
+        out_file << setfill('0') << setw(3) << r2[1] << " ";
+    }else if(r2!=""){
+        labelInsert(lblUse,r2,count+2);
+        out_file << "yyy ";
+    }
+    if(cod==-1){
         cont--;
     }
     return cont;
@@ -102,13 +105,19 @@ int main() {
         lblUse->pos=-1;
         lblUse->prox=nullptr;
         out_file << "MV-EXE\n\n";
-        out_file << "    www 999 www\n\n";
+        out_file << "    100 999 100\n\n";
 		while (1) {
 			input_file >> word;
             if(word[word.length()-1]==':'){
+                word.pop_back();
                 labelInsert(lblDef,word,countInst);
                 input_file >> word;
-                countInst += label(input_file, out_file, word);
+                int exeCtrl = label(input_file, out_file, word);
+                if (exeCtrl>0){
+                    countInst += exeCtrl;
+                }else{
+                    countInst += instruct(input_file, out_file, word, lblUse, countInst);
+                }
             }else{
                 countInst += instruct(input_file, out_file, word, lblUse, countInst);
             }
@@ -120,9 +129,9 @@ int main() {
                     list* lDefAux = lblDef;
                     while(lDefAux->prox!=nullptr){
                         lDefAux = lDefAux->prox;
-                        if (lDefAux->lbl.compare(lDefAux->lbl)==0){
+                        if (lUseAux->lbl.compare(lDefAux->lbl)==0){
                             out_file.seekp((29 + 4*(lUseAux->pos)));
-                            out_file << setfill('0') << setw(3) << (lDefAux->pos - lUseAux->pos);
+                            out_file << setfill('0') << setw(3) << (lDefAux->pos - lUseAux->pos -1);
                             break;
                         }
                     }
