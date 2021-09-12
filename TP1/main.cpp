@@ -15,7 +15,11 @@ int label(fstream& input_file, fstream& out_file,string lbl){
     string r1 = "";
     if(lbl=="WORD"){
         input_file >> r1;
-        out_file << setfill('0') << setw(3) << r1 <<" ";
+        if (stoi(r1)<0&&stoi(r1)>-10){
+            out_file << " " << r1 << " ";
+        }else{
+            out_file << setfill('0') << setw(3) << r1 <<" ";
+        }
         cont=1;
     }else{
 
@@ -130,8 +134,13 @@ int main() {
                     while(lDefAux->prox!=nullptr){
                         lDefAux = lDefAux->prox;
                         if (lUseAux->lbl.compare(lDefAux->lbl)==0){
-                            out_file.seekp((29 + 4*(lUseAux->pos)));
-                            out_file << setfill('0') << setw(3) << (lDefAux->pos - lUseAux->pos -1);
+                            out_file.seekp((25 + 4*(lUseAux->pos)));
+                            int sol = lDefAux->pos - lUseAux->pos -1;
+                            if (sol<0&&sol>-10){
+                                out_file << " " << sol;
+                            }else{
+                                out_file << setfill('0') << setw(3) << (lDefAux->pos - lUseAux->pos -1);
+                            }
                             break;
                         }
                     }
@@ -141,7 +150,7 @@ int main() {
 		}
 	}
 	input_file.close();
-    out_file.seekp(10);
+    out_file.seekp(8);
     out_file << setfill('0') << setw(3) << countInst;
     out_file.close();
 	return 0;
